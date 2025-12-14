@@ -1,13 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>VoiceStudio - Django Project</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceStudio - Платформа для упражнений по выразительному чтению</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #4a6ee0;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2.8rem;
+        }
+        .highlight { color: #ff6b6b; }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #4a6ee0;
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            margin: 10px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn:hover {
+            background: #3a5ed0;
+            transform: translateY(-3px);
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #4a6ee0;
+        }
+        code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            display: block;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <h1>VoiceStudio - Django Application</h1>
-    <p>Это Django-приложение для упражнений по выразительному чтению.</p>
-    <p>Для запуска требуется Python и Django.</p>
-    <p><a href="https://github.com/Alukarka/VoiceStudio">Исходный код на GitHub</a></p>
+    <div class="container">
+        <h1><span class="highlight">Voice</span>Studio</h1>
+        <p style="text-align: center; font-size: 1.2rem; color: #666; margin-bottom: 40px;">
+            Django-платформа для развития навыков выразительного чтения
+        </p>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3><i class="fas fa-bullseye"></i> О проекте</h3>
+                <p>VoiceStudio — веб-платформа для упражнений по литературному чтению с записью голоса, анализом интонации и отслеживанием прогресса.</p>
+            </div>
+            <div class="feature-card">
+                <h3><i class="fas fa-database"></i> Технологии</h3>
+                <p><strong>Бэкенд:</strong> Django, PostgreSQL<br>
+                <strong>Фронтенд:</strong> HTML5, CSS3, JavaScript<br>
+                <strong>Особенность:</strong> Web Audio API для записи голоса</p>
+            </div>
+            <div class="feature-card">
+                <h3><i class="fas fa-check-circle"></i> Статус</h3>
+                <p>✅ База данных: PostgreSQL настроена<br>
+                ✅ Таблиц: 16 (Django + кастомные)<br>
+                ✅ Пользователей: 3 в системе</p>
+            </div>
+        </div>
+
+        <h3><i class="fas fa-terminal"></i> Запуск проекта локально</h3>
+        <code>
+# Клонировать репозиторий
+git clone https://github.com/Alukarka/VoiceStudio.git
+cd VoiceStudio
+
+# Установить зависимости (если есть requirements.txt)
+pip install -r requirements.txt
+
+# Применить миграции
+python manage.py migrate
+
+# Запустить сервер
+python manage.py runserver
+        </code>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="https://github.com/Alukarka/VoiceStudio" class="btn" target="_blank">
+                <i class="fab fa-github"></i> Исходный код
+            </a>
+            <a href="http://localhost:8000/" class="btn" style="background: #ff6b6b;" target="_blank">
+                <i class="fas fa-play"></i> Запустить локально
+            </a>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; color: #666;">
+            <p><i class="fas fa-info-circle"></i> Это статическая страница. Основное приложение — Django проект.</p>
+            <p>GitHub Pages: <a href="https://pages.github.com/">Документация</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Простая анимация
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach((card, i) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * i);
+            });
+        });
+    </script>
 </body>
 </html>
