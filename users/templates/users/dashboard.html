@@ -1,0 +1,301 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Заголовок -->
+    <div class="dashboard-header mb-5">
+        <h1 class="display-5">
+            <i class="fas fa-tachometer-alt"></i> Личный кабинет
+        </h1>
+        <p class="lead text-muted">Добро пожаловать, {{ user.username }}! Здесь вы можете отслеживать свой прогресс.</p>
+    </div>
+
+    <!-- Основная статистика -->
+    <div class="row mb-5">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card text-center p-4 bg-primary text-white rounded shadow">
+                <div class="stat-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-microphone"></i>
+                </div>
+                <h3 class="stat-number">{{ total_attempts }}</h3>
+                <p class="stat-label mb-0">Всего записей</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="stat-card text-center p-4 bg-success text-white rounded shadow">
+                <div class="stat-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h3 class="stat-number">{{ completed_exercises }}</h3>
+                <p class="stat-label mb-0">Выполнено упражнений</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="stat-card text-center p-4 bg-warning text-white rounded shadow">
+                <div class="stat-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3 class="stat-number">
+                    {% if avg_rating %}
+                        {{ avg_rating }}/5
+                    {% else %}
+                        Нет оценок
+                    {% endif %}
+                </h3>
+                <p class="stat-label mb-0">Средняя оценка</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="stat-card text-center p-4 bg-info text-white rounded shadow">
+                <div class="stat-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="stat-number">{{ active_days }}</h3>
+                <p class="stat-label mb-0">Активных дней</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Левая колонка: Прогресс по категориям -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Прогресс по категориям</h5>
+                </div>
+                <div class="card-body">
+                    {% if category_stats %}
+                        {% for stat in category_stats %}
+                        <div class="category-progress mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>
+                                    {{ stat.category.icon }} {{ stat.category.name }}
+                                </span>
+                                <span class="text-muted">
+                                    {{ stat.attempts_count }}/{{ stat.exercises_count }}
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar bg-success"
+                                     role="progressbar"
+                                     style="width: {{ stat.progress }}%"
+                                     aria-valuenow="{{ stat.progress }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ stat.progress|floatformat:0 }}% выполнено</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">У вас пока нет записей. Начните тренироваться!</p>
+                            <a href="{% url 'exercises:list' %}" class="btn btn-primary">
+                                <i class="fas fa-play"></i> Начать упражнение
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Последние записи -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Последние записи</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_attempts %}
+                        <div class="list-group">
+                            {% for attempt in recent_attempts %}
+                            <a href="{% url 'exercises:attempt_detail' attempt.id %}"
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ attempt.exercise.title }}</h6>
+                                    <small class="text-muted">{{ attempt.created_at|date:"d.m.Y" }}</small>
+                                </div>
+                                <p class="mb-1 small text-muted">
+                                    {{ attempt.exercise.category.name }}
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small>Длительность: {{ attempt.duration }} сек</small>
+                                    {% if attempt.rating %}
+                                    <div>
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= attempt.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-secondary"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="#all-recordings" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-list"></i> Все записи
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-microphone-slash fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">У вас пока нет записей</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Все записи пользователя -->
+    <div class="card shadow mt-4" id="all-recordings">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-list-ol"></i> Все мои записи</h5>
+        </div>
+        <div class="card-body">
+            {% if user_attempts %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Упражнение</th>
+                            <th>Категория</th>
+                            <th>Дата</th>
+                            <th>Длительность</th>
+                            <th>Оценка</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in user_attempts %}
+                        <tr>
+                            <td>
+                                <strong>{{ attempt.exercise.title }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ attempt.exercise.category.icon }}
+                                    {{ attempt.exercise.category.name }}
+                                </span>
+                            </td>
+                            <td>{{ attempt.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>{{ attempt.duration }} сек</td>
+                            <td>
+                                {% if attempt.rating %}
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= attempt.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-secondary"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'exercises:attempt_detail' attempt.id %}"
+                                       class="btn btn-outline-primary" title="Просмотр">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'exercises:detail' attempt.exercise.id %}"
+                                       class="btn btn-outline-success" title="Повторить">
+                                        <i class="fas fa-redo"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-microphone fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">Записей пока нет</h4>
+                <p class="text-muted">Начните с выполнения первого упражнения</p>
+                <a href="{% url 'exercises:list' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-play"></i> Начать тренировку
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="quick-actions mt-4">
+        <div class="card shadow">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-3">Быстрые действия</h5>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'exercises:list' %}" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Новое упражнение
+                    </a>
+                    <a href="{% url 'users:profile' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-edit"></i> Редактировать профиль
+                    </a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home"></i> На главную
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-card {
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .progress {
+        border-radius: 5px;
+    }
+
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+    }
+
+    .list-group-item:first-child {
+        border-top: none;
+    }
+
+    .rating-stars {
+        font-size: 0.9rem;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+    }
+</style>
+
+<!-- Подключим Font Awesome для иконок -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}

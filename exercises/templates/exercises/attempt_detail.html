@@ -1,0 +1,147 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-headphones"></i> Ваша запись
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <h4>{{ attempt.exercise.title }}</h4>
+                    <p class="text-muted">
+                        Записано: {{ attempt.created_at|date:"d.m.Y H:i" }}
+                        | Длительность: {{ attempt.duration }} сек
+                    </p>
+
+                    <hr>
+
+                    <!-- Аудио-плеер -->
+                    <div class="audio-player mb-4">
+                        <h5>Прослушать запись:</h5>
+                        <audio controls class="w-100">
+                            <source src="{{ attempt.audio_file.url }}" type="audio/webm">
+                            Ваш браузер не поддерживает аудио элементы.
+                        </audio>
+                        <small class="text-muted">
+                            Формат: {{ attempt.audio_file.name|slice:"-4:"|upper }}
+                            | Размер: {{ attempt.audio_file.size|filesizeformat }}
+                        </small>
+                    </div>
+
+                    <!-- Обратная связь -->
+                    <div class="feedback-section mb-4">
+                        <h5>Обратная связь:</h5>
+                        {% if attempt.feedback %}
+                            <div class="p-3 bg-light rounded">
+                                {{ attempt.feedback|linebreaks }}
+                            </div>
+                            {% if attempt.rating %}
+                            <div class="mt-2">
+                                <strong>Оценка:</strong>
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= attempt.rating %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-secondary"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ attempt.rating }}/5)
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                Обратная связь пока не предоставлена.
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Управление записью -->
+                    <div class="mt-4">
+                        <div class="btn-group">
+                            <a href="{% url 'exercises:detail' attempt.exercise.id %}"
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-redo"></i> Повторить упражнение
+                            </a>
+                            <a href="{% url 'exercises:list' %}"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-list"></i> Все упражнения
+                            </a>
+                            {% if attempt.user == user %}
+                            <form method="post" action="{% url 'exercises:delete_attempt' attempt.id %}"
+                                  class="d-inline" onsubmit="return confirm('Удалить запись?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Информация об упражнении -->
+            <div class="card shadow mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Об упражнении</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Категория:</strong> {{ attempt.exercise.category.name }}</p>
+                    <p><strong>Сложность:</strong> {{ attempt.exercise.get_difficulty_display }}</p>
+                    <p><strong>Примерное время:</strong> {{ attempt.exercise.estimated_time }} мин</p>
+                    <p><strong>Текст упражнения:</strong></p>
+                    <div class="small text-muted">
+                        {{ attempt.exercise.text_content|truncatewords:30|linebreaks }}
+                    </div>
+                    <a href="{% url 'exercises:detail' attempt.exercise.id %}" class="btn btn-sm btn-outline-info mt-2">
+                        Полное описание
+                    </a>
+                </div>
+            </div>
+
+            <!-- Настройки публичности -->
+            {% if attempt.user == user %}
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Настройки записи</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'exercises:toggle_public' attempt.id %}">
+                        {% csrf_token %}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox"
+                                   id="publicSwitch" {% if attempt.is_public %}checked{% endif %}
+                                   onchange="this.form.submit()">
+                            <label class="form-check-label" for="publicSwitch">
+                                Публичная запись
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            Если включено, другие пользователи смогут слушать вашу запись
+                        </small>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    audio {
+        border-radius: 10px;
+        background: #f8f9fa;
+    }
+
+    .fa-star {
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}>

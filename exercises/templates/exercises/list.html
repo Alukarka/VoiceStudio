@@ -1,0 +1,85 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">🎭 Практические упражнения</h1>
+
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Сайдбар с категориями -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Категории</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="{% url 'exercises:list' %}" class="text-decoration-none">
+                                Все упражнения
+                            </a>
+                        </li>
+                        {% for category in categories %}
+                        <li class="list-group-item">
+                            <a href="{% url 'exercises:by_category' category.id %}"
+                               class="text-decoration-none">
+                                {{ category.icon }} {{ category.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Список упражнений -->
+            <div class="row">
+                {% for exercise in exercises %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">{{ exercise.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ exercise.description|truncatewords:20 }}</p>
+                            <div class="mb-2">
+                                <span class="badge bg-info">{{ exercise.get_difficulty_display }}</span>
+                                <span class="badge bg-secondary">{{ exercise.estimated_time }} мин</span>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'exercises:detail' exercise.id %}"
+                               class="btn btn-primary btn-sm">
+                                Начать упражнение
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        Пока нет доступных упражнений. Зайдите позже!
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+        border: none;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s;
+    }
+
+    .badge {
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceStudio - {% block title %}{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Навигация -->
+    <div class="navbar">
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin: 0;">🎵 VoiceStudio</h3>
+                </div>
+                <div>
+                    <a href="/" style="color: white; margin: 0 10px; text-decoration: none;">Главная</a>
+                    {% if user.is_authenticated %}
+                        <a href="/users/profile/" style="color: white; margin: 0 10px; text-decoration: none;">
+                            <i class="fas fa-user"></i>👤 {{ user.username }}
+                        </a>
+                        <a href="/users/logout/" style="color: white; margin: 0 10px; text-decoration: none;">
+                            <i class="fas fa-sign-out-alt"></i>Выйти
+                        </a>
+                        <a href="/users/dashboard/" style="color: white; margin: 0 10px; text-decoration: none">
+                            <i class="fas fa-tachometer-alt"></i> Кабинет
+                        </a>
+                    {% else %}
+                        <a href="/users/login/" style="color: white; margin: 0 10px; text-decoration: none;">Войти</a>
+                        <a href="/users/register/" style="color: white; margin: 0 10px; text-decoration: none;">Регистрация</a>
+                        <a href="/admin" style="color: white; margin: 0 10px; text-decoration: none;">Админ панель</a>
+                        <a href="#" style="color: white; margin: 0 10px; text-decoration: none;">Контакты</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сообщения -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Основной контент -->
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Подвал -->
+    <footer style="margin-top: 50px; padding: 20px; background: #f1f1f1; text-align: center;">
+        <p>© 2025 VoiceStudio. Все права защищены.</p>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

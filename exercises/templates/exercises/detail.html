@@ -1,0 +1,90 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">{{ exercise.title }}</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ exercise.get_difficulty_display }}</span>
+                        <span class="badge bg-secondary">{{ exercise.estimated_time }} минут</span>
+                        <span class="badge bg-success">{{ exercise.category.name }}</span>
+                    </div>
+                    
+                    <h4>Описание</h4>
+                    <p class="lead">{{ exercise.description }}</p>
+                    
+                    <h4 class="mt-4">Инструкция</h4>
+                    <div class="instruction-box p-3 bg-light rounded">
+                        {{ exercise.instruction|linebreaks }}
+                    </div>
+                    
+                    {% if exercise.text_content %}
+                    <h4 class="mt-4">Текст для озвучки</h4>
+                    <div class="text-content p-3 bg-light rounded">
+                        {{ exercise.text_content|linebreaks }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if exercise.audio_example %}
+                    <h4 class="mt-4">Пример выполнения</h4>
+                    <audio controls class="w-100">
+                        <source src="{{ exercise.audio_example.url }}" type="audio/mpeg">
+                        Ваш браузер не поддерживает аудио элементы.
+                    </audio>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'exercises:record' exercise.id %}" 
+                           class="btn btn-success btn-lg">
+                            🎤 Начать запись
+                        </a>
+                        <a href="{% url 'exercises:list' %}" class="btn btn-secondary">
+                            ← Вернуться к списку
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Сложность:</strong> {{ exercise.get_difficulty_display }}</p>
+                    <p><strong>Время:</strong> {{ exercise.estimated_time }} минут</p>
+                    <p><strong>Категория:</strong> {{ exercise.category.name }}</p>
+                    <p><strong>Добавлено:</strong> {{ exercise.created_at|date:"d.m.Y" }}</p>
+                    
+                    {% if user.is_authenticated %}
+                    <hr>
+                    <h6>Ваши попытки:</h6>
+                    <p class="text-muted">У вас пока нет попыток для этого упражнения.</p>
+                    <a href="{% url 'exercises:record' exercise.id %}" class="btn btn-outline-primary btn-sm">
+                        Сделать первую попытку
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .instruction-box, .text-content {
+        white-space: pre-line;
+    }
+    
+    audio {
+        border-radius: 5px;
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}

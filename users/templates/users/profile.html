@@ -1,0 +1,191 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Боковая панель профиля -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h5 class="mb-0">👤 Мой профиль</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="avatar-container mb-3">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}"
+                                 class="rounded-circle"
+                                 width="150"
+                                 height="150"
+                                 alt="Аватар {{ user.username }}"
+                                 style="object-fit: cover; border: 3px solid #667eea;">
+                        {% else %}
+
+
+                            <div class="default-avatar rounded-circle d-inline-flex align-items-center justify-content-center"
+                          style="width: 150px; height: 150px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 3rem;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <form method="POST" enctype="multipart/form-data" id="avatar-form">
+                        {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="avatar" class="form-label">Сменить аватар</label>
+                                    <input type="file"
+                                       class="form-control"
+                                       id="avatar"
+                                       name="avatar"
+                                       accept="image/*"
+                                       onchange="document.getElementById('avatar-form').submit()">
+                            </div>
+                    </form>
+
+                    <h4>{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="text-muted">@{{ user.username }}</p>
+                    
+                    <div class="mt-3">
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        {% if user.userprofile.location %}
+                            <p><strong>Город:</strong> {{ user.userprofile.location }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-body">
+                    <h6>Быстрые действия</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'home' %}" class="btn btn-outline-primary">На главную</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger">Выйти</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Форма редактирования профиля -->
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">✏️ Редактировать профиль</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <h6>Основная информация</h6>
+                        {% for field in user_form %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        
+                        <hr>
+                        
+                        <h6>Дополнительная информация</h6>
+                        {% for field in profile_form %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {{ field }}
+                                {% for error in field.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Информация о профиле -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">📊 Статистика</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3>{{ user.date_joined|date:"d.m.Y" }}</h3>
+                                <p class="text-muted">Дата регистрации</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 bg-light rounded">
+                                <h3>{{ user.last_login|date:"d.m.Y H:i"|default:"-" }}</h3>
+                                <p class="text-muted">Последний вход</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user.userprofile.bio %}
+                        <div class="mt-3">
+                            <h6>О себе:</h6>
+                            <p>{{ user.profile.bio }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+        border: none;
+    }
+    
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 12px;
+        font-weight: bold;
+    }
+    
+    input, textarea, select {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+    
+    textarea {
+        min-height: 100px;
+    }
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .avatar-container img, .default-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .avatar-container:hover img {
+        transform: scale(1.05);
+    }
+
+    .form-control[type="file"] {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}

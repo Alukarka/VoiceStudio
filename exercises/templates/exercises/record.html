@@ -1,0 +1,234 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">🎤 Запись упражнения</h3>
+                </div>
+                <div class="card-body">
+                    <h4>{{ exercise.title }}</h4>
+                    <p class="text-muted">{{ exercise.description }}</p>
+                    
+                    <hr>
+                    
+                    <!-- Текст для озвучки (если есть) -->
+                    {% if exercise.text_content %}
+                    <div class="mb-4">
+                        <h5>Текст для озвучки:</h5>
+                        <div class="p-3 bg-light rounded">
+                            {{ exercise.text_content|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Аудио-рекордер -->
+                    <div class="recorder-container mb-4">
+                        <h5>Аудио-рекордер:</h5>
+                        
+                        <div class="recorder-controls text-center mb-3">
+                            <button id="recordBtn" class="btn btn-danger btn-lg">
+                                <i class="fas fa-microphone"></i> Начать запись
+                            </button>
+                            <button id="stopBtn" class="btn btn-secondary btn-lg" disabled>
+                                <i class="fas fa-stop"></i> Остановить
+                            </button>
+                            <button id="playBtn" class="btn btn-info btn-lg" disabled>
+                                <i class="fas fa-play"></i> Прослушать
+                            </button>
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <div id="timer" class="display-4">00:00</div>
+                            <small class="text-muted">Длительность записи</small>
+                        </div>
+                        
+                        <div class="audio-preview mb-3">
+                            <audio id="audioPreview" controls class="w-100"></audio>
+                        </div>
+                        
+                        <div class="recording-status">
+                            <div id="status" class="alert alert-info">
+                                Нажмите "Начать запись" чтобы начать
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Форма для отправки -->
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        {{ form.audio_file }}
+                        {{ form.duration }}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" id="saveBtn" class="btn btn-primary btn-lg" disabled>
+                                <i class="fas fa-save"></i> Сохранить запись
+                            </button>
+                            <a href="{% url 'exercises:detail' exercise.id %}" class="btn btn-outline-secondary">
+                                ← Вернуться к упражнению
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключаем Font Awesome для иконок -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+    .recorder-controls button {
+        margin: 0 10px;
+        min-width: 150px;
+    }
+    
+    #timer {
+        font-family: 'Courier New', monospace;
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    audio {
+        border-radius: 10px;
+        background: #f8f9fa;
+    }
+    
+    .recording {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Аудио-рекордер на чистом JavaScript
+let mediaRecorder;
+let audioChunks = [];
+let timerInterval;
+let seconds = 0;
+let audioBlob;
+
+// Элементы DOM
+const recordBtn = document.getElementById('recordBtn');
+const stopBtn = document.getElementById('stopBtn');
+const playBtn = document.getElementById('playBtn');
+const audioPreview = document.getElementById('audioPreview');
+const timer = document.getElementById('timer');
+const statusDiv = document.getElementById('status');
+const saveBtn = document.getElementById('saveBtn');
+const audioFileInput = document.getElementById('audioFileInput');
+const durationInput = document.getElementById('durationInput');
+const uploadForm = document.getElementById('uploadForm');
+
+// Начать запись
+recordBtn.addEventListener('click', async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                sampleRate: 44100
+            } 
+        });
+        
+        mediaRecorder = new MediaRecorder(stream, {
+            mimeType: 'audio/webm;codecs=opus'
+        });
+        
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = event => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            
+            audioPreview.src = audioUrl;
+            playBtn.disabled = false;
+            saveBtn.disabled = false;
+            
+            // Конвертируем Blob в File
+            const audioFile = new File([audioBlob], `recording_${Date.now()}.webm`, {
+                type: 'audio/webm',
+                lastModified: Date.now()
+            });
+            
+            // Заполняем форму
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(audioFile);
+            audioFileInput.files = dataTransfer.files;
+            durationInput.value = seconds;
+            
+            statusDiv.className = 'alert alert-success';
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Запись завершена! Можно сохранить.';
+            recordBtn.classList.remove('recording');
+        };
+        
+        mediaRecorder.start();
+        startTimer();
+        
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+        
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.innerHTML = '<i class="fas fa-circle"></i> Идет запись...';
+        recordBtn.classList.add('recording');
+        
+    } catch (error) {
+        console.error('Ошибка доступа к микрофону:', error);
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Ошибка: ${error.message}`;
+    }
+});
+
+// Остановить запись
+stopBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        clearInterval(timerInterval);
+        
+        recordBtn.disabled = false;
+        stopBtn.disabled = true;
+    }
+});
+
+// Прослушать запись
+playBtn.addEventListener('click', () => {
+    audioPreview.play();
+});
+
+// Таймер
+function startTimer() {
+    seconds = 0;
+    timer.textContent = '00:00';
+    
+    timerInterval = setInterval(() => {
+        seconds++;
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timer.textContent = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+// Проверка поддержки записи
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    statusDiv.className = 'alert alert-warning';
+    statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ваш браузер не поддерживает запись аудио. Пожалуйста, используйте Chrome, Firefox или Edge.';
+    recordBtn.disabled = true;
+}
+</script>
+{% endblock %}

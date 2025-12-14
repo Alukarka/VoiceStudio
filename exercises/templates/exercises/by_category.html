@@ -1,0 +1,132 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'exercises:list' %}">Упражнения</a></li>
+            <li class="breadcrumb-item active">{{ category.name }}</li>
+        </ol>
+    </nav>
+
+
+    <div class="category-header text-center mb-5">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">{{ category.icon }}</div>
+        <h1 class="display-4">{{ category.name }}</h1>
+        {% if category.description %}
+        <p class="lead text-muted">{{ category.description }}</p>
+        {% endif %}
+    </div>
+
+
+    {% if exercises %}
+    <div class="row">
+        {% for exercise in exercises %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">{{ exercise.title }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ exercise.description|truncatewords:30 }}</p>
+
+                    <div class="exercise-meta mb-3">
+                        <span class="badge bg-info me-1">{{ exercise.get_difficulty_display }}</span>
+                        <span class="badge bg-secondary">{{ exercise.estimated_time }} мин</span>
+                    </div>
+
+                    {% if exercise.text_content %}
+                    <div class="text-preview small text-muted mb-3">
+                        <strong>Текст:</strong> {{ exercise.text_content|truncatewords:20 }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-grid">
+                        <a href="{% url 'exercises:detail' exercise.id %}"
+                           class="btn btn-outline-primary">
+                            Начать упражнение
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="empty-state-icon" style="font-size: 5rem; color: #ddd; margin-bottom: 1rem;">
+            🎭
+        </div>
+        <h3 class="text-muted">В этой категории пока нет упражнений</h3>
+        <p class="text-muted">Загляните позже или выберите другую категорию</p>
+        <a href="{% url 'exercises:list' %}" class="btn btn-primary mt-3">
+            ← Вернуться ко всем упражнениям
+        </a>
+    </div>
+    {% endif %}
+
+
+    <div class="category-navigation mt-5">
+        <h4 class="mb-3">Другие категории</h4>
+        <div class="row">
+            {% for cat in all_categories %}
+            {% if cat.id != category.id %}
+            <div class="col-md-3 mb-3">
+                <a href="{% url 'exercises:by_category' cat.id %}"
+                   class="category-link text-decoration-none">
+                    <div class="card text-center h-100">
+                        <div class="card-body">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">
+                                {{ cat.icon }}
+                            </div>
+                            <h6 class="card-title">{{ cat.name }}</h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .category-header {
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+    }
+
+    .card {
+        border-radius: 10px;
+        border: none;
+        transition: transform 0.3s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .category-link .card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+
+    .category-link .card:hover {
+        background: #e9ecef;
+        border-color: #667eea;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .empty-state-icon {
+        opacity: 0.3;
+    }
+</style>
+{% endblock %}
