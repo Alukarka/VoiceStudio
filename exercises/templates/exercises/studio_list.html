@@ -1,0 +1,9 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    {% include 'exercises/partials/studio_intro_block.html' with title='Виртуальная студия' description='Здесь собраны все упражнения с видео для дубляжа.' %}
+    {% include 'exercises/partials/studio_exercises_grid.html' with exercises=exercises empty_message='Пока нет упражнений с видео для виртуальной студии.' %}
+</div>
+{% endblock %}
+

@@ -40,7 +40,27 @@ class PracticalExercise(models.Model):
     audio_example = models.FileField(upload_to='exercises/examples/',
                                      blank=True, null=True,
                                      verbose_name="Пример аудио")
-
+    video_file = models.FileField(upload_to='exercises/videos/', blank=True, null=True,
+                                  verbose_name='Видео для тренировки')
+    video_url = models.URLField(blank=True, verbose_name='Ссылка на видео')
+    subtitle_en_file = models.FileField(upload_to='exercises/subtitles/', blank=True, null=True,
+                                        verbose_name='Английские субтитры (VTT)')
+    subtitle_ru_file = models.FileField(upload_to='exercises/subtitles/', blank=True, null=True,
+                                        verbose_name='Русские субтитры (VTT)')
+    source_language = models.CharField(max_length=10, default='en', verbose_name='Язык оригинала')
+    subtitle_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('none', 'Не загружены'),
+            ('pending', 'В очереди'),
+            ('processing', 'Обрабатываются'),
+            ('done', 'Готово'),
+            ('error', 'Ошибка'),
+        ],
+        default='none',
+        verbose_name='Статус субтитров',
+    )
+    subtitle_error = models.TextField(blank=True, verbose_name='Описание ошибки субтитров')
 
 #Метаданные
 

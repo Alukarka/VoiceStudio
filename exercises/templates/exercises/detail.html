@@ -13,8 +13,31 @@
                         <span class="badge bg-info">{{ exercise.get_difficulty_display }}</span>
                         <span class="badge bg-secondary">{{ exercise.estimated_time }} минут</span>
                         <span class="badge bg-success">{{ exercise.category.name }}</span>
+                        {% if has_studio %}
+                            {% if exercise.subtitle_status == 'done' %}
+                                <span class="badge bg-success">Субтитры: готово</span>
+                            {% elif exercise.subtitle_status == 'processing' %}
+                                <span class="badge bg-warning text-dark">Субтитры: обрабатываются</span>
+                            {% elif exercise.subtitle_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Субтитры: в очереди</span>
+                            {% elif exercise.subtitle_status == 'error' %}
+                                <span class="badge bg-danger">Субтитры: ошибка</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Субтитры: не сгенерированы</span>
+                            {% endif %}
+                        {% endif %}
                     </div>
-                    
+
+                    {% if has_studio %}
+                        {% if exercise.subtitle_status == 'done' %}
+                            <div class="alert alert-success py-2">EN/RU субтитры доступны в виртуальной студии.</div>
+                        {% elif exercise.subtitle_status == 'processing' or exercise.subtitle_status == 'pending' %}
+                            <div class="alert alert-warning py-2">Субтитры еще готовятся. Обновите страницу через минуту, они появятся автоматически.</div>
+                        {% elif exercise.subtitle_status == 'error' %}
+                            <div class="alert alert-danger py-2">Ошибка генерации субтитров. Проверьте поле <strong>subtitle_error</strong> в админке.</div>
+                        {% endif %}
+                    {% endif %}
+
                     <h4>Описание</h4>
                     <p class="lead">{{ exercise.description }}</p>
                     
@@ -40,10 +63,17 @@
                 </div>
                 <div class="card-footer">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'exercises:record' exercise.id %}" 
+                        <a href="{% url 'exercises:record' exercise.id %}"
                            class="btn btn-success btn-lg">
                             🎤 Начать запись
                         </a>
+
+                        <a href="{% url 'exercises:studio' exercise.id %}" class="btn btn-dark btn-lg">
+                            🎬 Открыть виртуальную студию
+                        </a>
+                        {% if not has_studio %}
+                        <small class="text-muted">Видео для этого упражнения еще не добавлено. Вы можете открыть студию после загрузки видео в админке.</small>
+                        {% endif %}
                         <a href="{% url 'exercises:list' %}" class="btn btn-secondary">
                             ← Вернуться к списку
                         </a>

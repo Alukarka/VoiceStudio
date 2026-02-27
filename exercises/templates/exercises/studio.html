@@ -1,0 +1,186 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    {% include 'exercises/partials/studio_intro_block.html' with title=exercise.title description='Видео, субтитры и запись дубляжа в одном окне.' %}
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">🎬 Виртуальная студия: {{ exercise.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <video id="studioVideo" controls class="w-100" crossorigin="anonymous">
+                        {% if exercise.video_file %}
+                            <source src="{{ exercise.video_file.url }}" type="video/mp4">
+                        {% else %}
+                            <source src="{{ exercise.video_url }}" type="video/mp4">
+                        {% endif %}
+                        {% if exercise.subtitle_en_file %}
+                            <track id="trackEn" kind="subtitles" srclang="en" label="English" src="{{ exercise.subtitle_en_file.url }}">
+                        {% endif %}
+                        {% if exercise.subtitle_ru_file %}
+                            <track id="trackRu" kind="subtitles" srclang="ru" label="Русские" src="{{ exercise.subtitle_ru_file.url }}" default>
+                        {% endif %}
+                        Ваш браузер не поддерживает видео.
+                    </video>
+
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-subtitle="off">Без субтитров</button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-subtitle="en">English</button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-subtitle="ru">Русские</button>
+                    </div>
+                    <div class="mt-3">
+                        {% if exercise.subtitle_status == 'done' %}
+                            <div class="alert alert-success py-2 mb-0">Субтитры готовы: можно переключать EN/RU.</div>
+                        {% elif exercise.subtitle_status == 'processing' %}
+                            <div class="alert alert-warning py-2 mb-0">Субтитры обрабатываются. Обновите страницу через минуту.</div>
+                        {% elif exercise.subtitle_status == 'pending' %}
+                            <div class="alert alert-warning py-2 mb-0">Субтитры в очереди на генерацию.</div>
+                        {% elif exercise.subtitle_status == 'error' %}
+                            <div class="alert alert-danger py-2 mb-0">Ошибка генерации субтитров. Подробности в админке в поле subtitle_error.</div>
+                        {% else %}
+                            <div class="alert alert-secondary py-2 mb-0">Субтитры еще не запущены.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">🎤 Дубляж</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Нажмите «Старт дубляжа» — начнется запись вашего микрофона. Видео можно проигрывать и ставить на паузу вручную.</p>
+                    <div class="d-grid gap-2 mb-3">
+                        <button id="recordBtn" class="btn btn-danger">Старт дубляжа</button>
+                        <button id="stopBtn" class="btn btn-secondary" disabled>Остановить</button>
+                        <button id="playBtn" class="btn btn-info" disabled>Прослушать</button>
+                    </div>
+                    <div id="timer" class="h4 text-center mb-2">00:00</div>
+                    <div id="status" class="alert alert-info py-2">Готов к записи</div>
+                    <audio id="audioPreview" controls class="w-100 mb-3"></audio>
+
+                    <form method="post" enctype="multipart/form-data" id="uploadForm">
+                        {% csrf_token %}
+                        {{ form.audio_file }}
+                        {{ form.duration }}
+                        <button type="submit" id="saveBtn" class="btn btn-primary w-100" disabled>Сохранить дубляж</button>
+                    </form>
+
+                    <a href="{% url 'exercises:detail' exercise.id %}" class="btn btn-outline-secondary w-100 mt-2">← К упражнению</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr class="my-4">
+    <h5 class="mb-3">Другие упражнения виртуальной студии</h5>
+    {% include 'exercises/partials/studio_exercises_grid.html' with exercises=studio_exercises empty_message='Сейчас это единственное видео-упражнение в студии.' %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let timerInterval;
+let seconds = 0;
+let audioBlob;
+
+const video = document.getElementById('studioVideo');
+const recordBtn = document.getElementById('recordBtn');
+const stopBtn = document.getElementById('stopBtn');
+const playBtn = document.getElementById('playBtn');
+const saveBtn = document.getElementById('saveBtn');
+const timer = document.getElementById('timer');
+const statusDiv = document.getElementById('status');
+const audioPreview = document.getElementById('audioPreview');
+const audioInput = document.getElementById('audioFileInput');
+const durationInput = document.getElementById('durationInput');
+
+function toggleSubtitle(mode) {
+    const tracks = video.textTracks;
+    for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = 'disabled';
+    }
+
+    if (mode === 'en') {
+        for (let i = 0; i < tracks.length; i++) {
+            if (tracks[i].language === 'en') tracks[i].mode = 'showing';
+        }
+    }
+    if (mode === 'ru') {
+        for (let i = 0; i < tracks.length; i++) {
+            if (tracks[i].language === 'ru') tracks[i].mode = 'showing';
+        }
+    }
+}
+
+document.querySelectorAll('[data-subtitle]').forEach(btn => {
+    btn.addEventListener('click', () => toggleSubtitle(btn.dataset.subtitle));
+});
+
+recordBtn.addEventListener('click', async () => {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            audioPreview.src = URL.createObjectURL(audioBlob);
+            playBtn.disabled = false;
+            saveBtn.disabled = false;
+
+            const file = new File([audioBlob], `studio_dub_${Date.now()}.webm`, { type: 'audio/webm' });
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            audioInput.files = dt.files;
+            durationInput.value = seconds;
+
+            statusDiv.className = 'alert alert-success py-2';
+            statusDiv.textContent = 'Запись готова. Можно сохранить.';
+        };
+
+        mediaRecorder.start();
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusDiv.className = 'alert alert-danger py-2';
+        statusDiv.textContent = 'Идет запись дубляжа...';
+
+        seconds = 0;
+        timer.textContent = '00:00';
+        timerInterval = setInterval(() => {
+            seconds += 1;
+            const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            timer.textContent = `${mins}:${secs}`;
+        }, 1000);
+    } catch (error) {
+        statusDiv.className = 'alert alert-danger py-2';
+        statusDiv.textContent = 'Нет доступа к микрофону: ' + error.message;
+    }
+});
+
+stopBtn.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        clearInterval(timerInterval);
+    }
+    recordBtn.disabled = false;
+    stopBtn.disabled = true;
+});
+
+playBtn.addEventListener('click', () => {
+    audioPreview.play();
+});
+</script>
+{% endblock %}
